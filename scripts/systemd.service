@@ -1,0 +1,15 @@
+[Unit]
+Description=WSL2 GPG Agent proxy
+
+[Service]
+Type=simple
+Environment="SSH_AGENT_SOCK=/run/user/%U/gnupg/S.gpg-agent.ssh"
+Environment="GPG_AGENT_SOCK=/run/user/%U/gnupg/S.gpg-agent"
+Environment="WSL2_SSH_PAGEANT_BIN=/usr/local/bin/wsl2-ssh-pageant.exe"
+Environment="GPG_TTY=$(tty)"
+ExecStart=/usr/local/bin/wsl2-gpg-agent-proxy
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

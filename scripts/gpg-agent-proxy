@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Checks if the gpg socket is present and removes it if it is.
+if ss -a | grep -q "$GPG_AGENT_SOCK"; then
+  rm -rf "$GPG_AGENT_SOCK"
+fi
+
+# Checks if the ssh socket is present and removes it if it is.
+if ss -a | grep -q "$SSH_AGENT_SOCK"; then
+  rm -rf "$SSH_AGENT_SOCK"
+fi
+
+# Checks if the wsl2-ssh-pageant binary is present and executable.
+if ! test -x "$WSL2_SSH_PAGEANT_BIN"; then
+    echo "WARNING: $WSL2_SSH_PAGEANT_BIN is not executable."
+    exit 1
+fi
+
+# Starts the gpg agent proxy.
+socat UNIX-LISTEN:"$GPG_AGENT_SOCK,fork" EXEC:"$WSL2_SSH_PAGEANT_BIN --gpg S.gpg-agent" &
+gpg_proxy_pid=$!
+
+# Starts the ssh agent proxy.
+socat UNIX-LISTEN:"$SSH_AGENT_SOCK,fork" EXEC:"$WSL2_SSH_PAGEANT_BIN" &
+ssh_proxy_pid=$!
+
+wait 
+
+# Kills both socat processes.
+kill $gpg_proxy_pid
+kill $ssh_proxy_pid
